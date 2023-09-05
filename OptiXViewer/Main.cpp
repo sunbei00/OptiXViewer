@@ -1,17 +1,20 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "GL/glew.h"
+#include "Camera.h"
 #include <stdio.h>
-#include <GLFW/glfw3.h> 
+#include <GLFW/glfw3.h>
+#include "GL/glu.h"
+#include <sstream>
 
 
-static void glfw_error_callback(int error, const char* description)
-{
+
+static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-int main(int, char**)
-{
+int main(int, char**) {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
@@ -41,8 +44,7 @@ int main(int, char**)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -50,16 +52,32 @@ int main(int, char**)
         
         // imgui renderering
         
+        {
+            Camera tmp = EditMode::getEditMode().camera;
+            std::ostringstream oss;
+            oss << "center : " << tmp.cen.x << " " << tmp.cen.y << " " << tmp.cen.z << std::endl;
+            oss << "eye : " << tmp.eye.x << " " << tmp.eye.y << " " << tmp.eye.z << std::endl;
+            oss << "up : " << tmp.up.x << " " << tmp.up.y << " " << tmp.up.z << std::endl;
+            ImGui::Text(oss.str().c_str());
+        }
 
         ImGui::Render();
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
+        EditMode::getEditMode().updateCamera();
+        Camera& c = EditMode::getEditMode().camera;
+
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        gluLookAt(c.eye.x, c.eye.y, c.eye.z, c.cen.x, c.cen.y, c.cen.z, c.up.x, c.up.y, c.up.z);
 
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());\
         glfwSwapBuffers(window);
