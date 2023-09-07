@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\source\repos\OptiX_Viewer\OptiXViewer\x64\Release\OptiXViewer.exe</FullPath>
+      <FullPath>D:\source\repos\OptiX_Viewer\OptiXViewer\OptiXViewer\OptiXViewer.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

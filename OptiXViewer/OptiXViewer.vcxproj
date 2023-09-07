@@ -83,6 +83,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)</OutDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnabled>false</VcpkgEnabled>
@@ -153,9 +154,16 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>freeglut.lib;glew32.lib;glew32s.lib;glfw3.lib;glfw3_mt.lib;glfw3dll.lib;opencv_img_hash450.lib;opencv_img_hash450d.lib;opencv_world450.lib;opencv_world450d.lib;OpenGL32.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freeglut.lib;glew32.lib;glew32s.lib;glfw3.lib;glfw3_mt.lib;glfw3dll.lib;opencv_img_hash450.lib;opencv_img_hash450d.lib;opencv_world450.lib;opencv_world450d.lib;OpenGL32.Lib;cuda.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)3rdParty\lib\;$(CUDA_PATH)\lib\x64\</AdditionalLibraryDirectories>
     </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <NvccCompilation>ptx</NvccCompilation>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="3rdParty\glm\detail\glm.cpp" />
@@ -169,6 +177,7 @@
     <ClCompile Include="3rdParty\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="OptiXRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdParty\GLFW\glfw3.h" />
@@ -937,7 +946,13 @@
     <ClInclude Include="3rdParty\opencv2\xphoto\oilpainting.hpp" />
     <ClInclude Include="3rdParty\opencv2\xphoto\tonemap.hpp" />
     <ClInclude Include="3rdParty\opencv2\xphoto\white_balance.hpp" />
+    <ClInclude Include="3rdParty\optix\CUDABuffer.h" />
+    <ClInclude Include="3rdParty\optix\Exception.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="LaunchParams.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="OptiXRenderer.h" />
+    <ClInclude Include="tinyObjLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="3rdParty\glm\detail\func_common.inl" />
@@ -1074,6 +1089,12 @@
     <None Include="3rdParty\glm\gtx\vector_angle.inl" />
     <None Include="3rdParty\glm\gtx\vector_query.inl" />
     <None Include="3rdParty\glm\gtx\wrap.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="devicePrograms.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <InterleaveSourceInPTX Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</InterleaveSourceInPTX>
+    </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

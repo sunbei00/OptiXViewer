@@ -31,6 +31,15 @@
     <Filter Include="3rdParty\opencv">
       <UniqueIdentifier>{6b5fe24b-55c1-4707-868e-8d4110311366}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3rdParty\optix">
+      <UniqueIdentifier>{da8e27ed-0b70-42d8-9583-b847fe086473}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CUDA">
+      <UniqueIdentifier>{4e07d694-5fd1-4be2-9820-693f1b9052f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdParty\TinyObjectLoader">
+      <UniqueIdentifier>{36bf7f28-fe1c-4d2d-b563-187a82219782}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -65,6 +74,9 @@
     </ClCompile>
     <ClCompile Include="3rdParty\glm\detail\glm.cpp">
       <Filter>3rdParty\glm</Filter>
+    </ClCompile>
+    <ClCompile Include="OptiXRenderer.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2369,6 +2381,24 @@
     <ClInclude Include="3rdParty\opencv2\xphoto\white_balance.hpp">
       <Filter>3rdParty\opencv</Filter>
     </ClInclude>
+    <ClInclude Include="OptiXRenderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="LaunchParams.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdParty\optix\Exception.h">
+      <Filter>3rdParty\optix</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdParty\optix\CUDABuffer.h">
+      <Filter>3rdParty\optix</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyObjLoader.h">
+      <Filter>3rdParty\TinyObjectLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="3rdParty\glm\detail\func_common.inl">
@@ -2773,5 +2803,10 @@
     <None Include="3rdParty\glm\gtx\wrap.inl">
       <Filter>3rdParty\glm</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="devicePrograms.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>
