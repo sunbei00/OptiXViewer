@@ -20,7 +20,7 @@ struct Camera {
 
 class EditMode {
 private:
-	EditMode() : mouseState(MouseState::IDLE), camera({ { 0,0,1 }, { 0,0,0 }, { 0,1,0 }, 0.1, 100 ,0.66f}) {}
+	EditMode() : mouseState(MouseState::IDLE), camera({ { 0,0,10 }, { 0,0,0 }, { 0,1,0 }, 0.1, 100 ,0.66f}) {}
 	MouseState mouseState;
 	static EditMode* editMode;
 public:

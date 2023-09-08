@@ -62,6 +62,7 @@ public:
 	void render(size_t width, size_t height);
 	void downloadPixels(uint32_t* h_pixels);
 
+
 	LaunchData launchData = {};
 };
 

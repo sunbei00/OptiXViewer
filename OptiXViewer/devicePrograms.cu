@@ -29,7 +29,7 @@ return reinterpret_cast <T *> (unpackPointer(u0, u1));
 }
 
 extern "C" __global__ void __closesthit__radiance() {
-    printf("yah!");
+    //printf("yah!");
     GeometryRecord& sbtData = *(GeometryRecord*) optixGetSbtDataPointer();
 
     const int primID = optixGetPrimitiveIndex();

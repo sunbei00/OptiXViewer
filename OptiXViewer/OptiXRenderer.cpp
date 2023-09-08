@@ -300,7 +300,7 @@ OptixTraversableHandle OptiXRenderer::createGeometryAS(ObjectModel& model) {
 
 	OptixAccelBuildOptions accelBuildOptions = {};
 
-	accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_NONE;
+	accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_NONE | OPTIX_BUILD_FLAG_ALLOW_RANDOM_VERTEX_ACCESS;
 	accelBuildOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
 
 	OptixAccelBufferSizes accelBufferSizes;
@@ -337,21 +337,21 @@ OptixTraversableHandle OptiXRenderer::createGeometryAS(ObjectModel& model) {
 
 void OptiXRenderer::createInstances() {
 	for (int i = 0; i < geoTraversableHandle.size(); i++) {
-		OptixInstance instance;
+		OptixInstance instance = {};
+
 		// row-wise
-		float tmp[12] = {	1,0,0,
-							0,1,0,
-							0,0,1, 
-							0,0,0};
-		for (int j = 0; j < 12; j++)
-			instance.transform[j] = tmp[j];
+		float tmp[12] = {	1,0,0,0,
+							0,1,0,0,
+							0,0,1,0,
+							};
+		memcpy(instance.transform, tmp, sizeof(float) * 12);
+		instance.instanceId = instances.size();
 		// TODO
 		// instance.sbtOffset = NUM_RAY_TYPES * hitRecord;   RAY 수 늘리면 어떻게 되는지 생각해야함 
-		instance.sbtOffset = 0; //i * RAY_TYPE_COUNT; //RAY_TYPE_COUNT * geoDatas.size();
+		instance.sbtOffset = i* RAY_TYPE_COUNT; //RAY_TYPE_COUNT * geoDatas.size();
 		instance.visibilityMask = OptixVisibilityMask(255);
 		instance.flags = OPTIX_INSTANCE_FLAG_NONE;
 		instance.traversableHandle = geoTraversableHandle[i];
-		instance.instanceId = i;
 		instances.push_back(instance);
 	}
 }
@@ -360,19 +360,15 @@ OptixTraversableHandle OptiXRenderer::createInstancesAS() {
 	CUDABuffer instancesBuffer;
 	instancesBuffer.alloc_and_upload<OptixInstance>(instances);
 
-	//OptixBuildInputInstanceArray instanceInput = {};
-	//instanceInput.numInstances = 1;
-	//instanceInput.instances = instancesBuffer.d_pointer();
-
 	OptixBuildInput instanceInput = {};
 
 	instanceInput.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
 	instanceInput.instanceArray.instances = instancesBuffer.d_pointer();
-	instanceInput.instanceArray.numInstances = instances.size();
+	instanceInput.instanceArray.numInstances = static_cast<unsigned int>(instances.size());  
 
 	OptixAccelBuildOptions accelBuildOptions = {};
 
-	accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_NONE;// | OPTIX_BUILD_FLAG_ALLOW_UPDATE;
+	accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_NONE;
 	accelBuildOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
 
 	OptixAccelBufferSizes accelBufferSizes;
