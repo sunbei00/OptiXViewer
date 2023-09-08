@@ -1,29 +1,31 @@
 #pragma once
 #include "optix.h"
+#include "helper_math.h"
+#include <stdint.h>
 
-enum RAY_TYPE { RAY_TYPE_GEN, RAY_TYPE_COUNT };
 
-struct ivec2 {
-    size_t x, y;
+enum RAY_TYPE { RAY_TYPE_GEN = 0, RAY_TYPE_COUNT };
+
+struct dCamera {
+	float3 position;
+	float3 direction;
+	float3 horizontal;
+	float3 vertical;
 };
 
-struct vec4 {
-    float x, y, z, w;
+struct LaunchData {
+	uint32_t* colorBuffer = NULL;
+	OptixTraversableHandle traversable = NULL;
+	int2 frameSize = int2{ 0,0 };
+	dCamera camera = {};
 };
 
-struct vec3 {
-    float x, y, z;
+
+struct GeometryRecord {
+	uint3* indices;
+	float3* attributes;
 };
 
 struct LaunchParams {
-    OptixTraversableHandle traversable = NULL;
-    vec4* colorBuffer = nullptr;
-    //ivec2 frameSize = ivec2{ 0,0 };
-
-    //struct {
-    //    vec3 position;
-    //    vec3 direction;
-    //    vec3 horizontal;
-    //    vec3 vertical;
-    //} camera;
+	LaunchData* data;
 };

@@ -14,12 +14,13 @@ struct Camera {
 	glm::vec3 up;
 	float nearLen;
 	float farLen;
-	int width, height;
+	float cosFovy;
+	// int width, height;
 };
 
 class EditMode {
 private:
-	EditMode() : mouseState(MouseState::IDLE), camera({ { 0,0,20 }, { 0,0,0 }, { 0,1,0 }, 0.1, 10000 }) {}
+	EditMode() : mouseState(MouseState::IDLE), camera({ { 0,0,1 }, { 0,0,0 }, { 0,1,0 }, 0.1, 100 ,0.66f}) {}
 	MouseState mouseState;
 	static EditMode* editMode;
 public:

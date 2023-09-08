@@ -5,9 +5,9 @@ int addVertex(ObjectModel* mesh, tinyobj::attrib_t& attributes, const tinyobj::i
 	if (knownVertices.find(idx.vertex_index) != knownVertices.end())
 		return knownVertices[idx.vertex_index];
 
-	const glm::vec3* vertex_array = (const glm::vec3*)attributes.vertices.data();
-	const glm::vec3* normal_array = (const glm::vec3*)attributes.normals.data();
-	const glm::vec2* texcoord_array = (const glm::vec2*)attributes.texcoords.data();
+	const float3* vertex_array = (const float3*)attributes.vertices.data();
+	const float3* normal_array = (const float3*)attributes.normals.data();
+	const float2* texcoord_array = (const float2*)attributes.texcoords.data();
 
 	int newID = (int)mesh->vertices.size();
 	knownVertices[idx.vertex_index] = newID;
@@ -65,10 +65,10 @@ std::vector<ObjectModel*> fastLoadOBJModels(const std::string& fileName) {
 				tinyobj::index_t idx1 = shape.mesh.indices[3 * faceID + 1];
 				tinyobj::index_t idx2 = shape.mesh.indices[3 * faceID + 2];
 
-				glm::vec3 idx = glm::vec3(addVertex(mesh, attributes, idx0, knownVertices),
+				float3 idx = make_float3(addVertex(mesh, attributes, idx0, knownVertices),
 					addVertex(mesh, attributes, idx1, knownVertices),
 					addVertex(mesh, attributes, idx2, knownVertices));
-				mesh->indices.push_back(glm::ivec3(idx.x, idx.y, idx.z));
+				mesh->indices.push_back(make_uint3(idx.x, idx.y, idx.z));
 			}
 
 			if (mesh->vertices.empty())

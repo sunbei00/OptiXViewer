@@ -4,9 +4,10 @@
 #include <iostream>
 #include <fstream>
 #include "Camera.h"
+#include "helper_math.h"
 
 
-#define MAX_TRACE_DEPTH 2
+#define MAX_TRACE_DEPTH 4
 
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) NullRecord
 {
@@ -21,17 +22,13 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) DataRecord
 	T data;
 };
 
-struct GeometryRecord {
-	CUdeviceptr indices;
-	CUdeviceptr attributes;
-};
 
 using RaygenRecord = NullRecord;
 using MissRecord = NullRecord;
 using HitRecord = DataRecord<GeometryRecord>;
 
 OptiXRenderer::OptiXRenderer() {
-	launchParamsBuffer.alloc(sizeof(LaunchParams));
+	initLaunchParams();
 	initOptix();
 	createContext();
 	createModule();
@@ -41,6 +38,18 @@ OptiXRenderer::OptiXRenderer() {
 	createPipeline();
 }
 
+
+void OptiXRenderer::initLaunchParams() {
+	launchData.colorBuffer = nullptr;
+	launchData.frameSize = make_int2(-1, -1);
+	launchData.traversable = NULL;
+	launchDataBuffer.alloc(sizeof(LaunchData));
+	launchDataBuffer.upload(&launchData, 1);
+
+	launchParams.data = (LaunchData*) launchDataBuffer.d_pointer();
+	launchParamsBuffer.alloc(sizeof(LaunchParams));
+	launchParamsBuffer.upload(&launchParams, 1);
+}
 
 void OptiXRenderer::initOptix() {
 	std::cout << "initializaing optix" << std::endl;
@@ -83,13 +92,14 @@ void OptiXRenderer::createModule() {
 
 	pipelineCompileOptions = {};
 	pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-	pipelineCompileOptions.usesMotionBlur = false;
+	pipelineCompileOptions.usesMotionBlur = 0;
 	pipelineCompileOptions.numPayloadValues = 2;
 	pipelineCompileOptions.numAttributeValues = 2;
 	pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
 	pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
 
 	pipelineLinkOptions.maxTraceDepth = MAX_TRACE_DEPTH;
+	pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL;
 
 	std::string str;
 	std::ifstream file(".\\devicePrograms.ptx", std::ios::binary);
@@ -244,17 +254,18 @@ void OptiXRenderer::buildSBT() {
 		auto& mesh = geoDatas[meshID];
 
 		HitRecord rec;
-		// hitgroupPgs[0] -> hitgroupPGs[meshID] 수정함.
+		// hitgroupPgs[0] -> hitgroupPGs[meshID] 수정함. -> undo
 		OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
 		//rec.data.color = mesh->diffuse;
 		rec.data = GeometryRecord{ mesh.indices , mesh.attributes };
 		hitgroupRecords.push_back(rec);
 	}
-	printf("hit group record : %d\n", hitgroupRecords.size());
 	hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
 	sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
 	sbt.hitgroupRecordStrideInBytes = sizeof(HitRecord);
 	sbt.hitgroupRecordCount = (unsigned int)hitgroupRecords.size();
+
+	printf("hit group record : %d\n", hitgroupRecords.size());
 }
 
 
@@ -264,22 +275,22 @@ OptixTraversableHandle OptiXRenderer::createGeometryAS(ObjectModel& model) {
 	CUDABuffer dAttributes;
 	CUDABuffer dIndices;
 
-	dAttributes.alloc_and_upload<glm::vec3>(attributes);
-	dIndices.alloc_and_upload<glm::ivec3>(indices);
+	dAttributes.alloc_and_upload<float3>(attributes);
+	dIndices.alloc_and_upload<uint3>(indices);
 
 	OptixBuildInput triangleInput = {};
 
 	triangleInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 
 	triangleInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-	triangleInput.triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
+	triangleInput.triangleArray.vertexStrideInBytes = sizeof(float3);
 	triangleInput.triangleArray.numVertices = (unsigned int)attributes.size();
 	CUdeviceptr tmp = dAttributes.d_pointer();
 	triangleInput.triangleArray.vertexBuffers = &tmp;
 
 	triangleInput.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
-	triangleInput.triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
-	triangleInput.triangleArray.numIndexTriplets = (unsigned int)indices.size();
+	triangleInput.triangleArray.indexStrideInBytes = sizeof(uint3);
+	triangleInput.triangleArray.numIndexTriplets = (unsigned int) indices.size();
 	triangleInput.triangleArray.indexBuffer = dIndices.d_pointer();
 
 	unsigned int triangleInputFlags[1] = { OPTIX_GEOMETRY_FLAG_NONE };
@@ -313,10 +324,10 @@ OptixTraversableHandle OptiXRenderer::createGeometryAS(ObjectModel& model) {
 
 	GeometryData geometry;
 
-	geometry.indices = dIndices.d_pointer();
-	geometry.attributes = dAttributes.d_pointer();
-	geometry.numIndices = indices.size() * 3;
-	geometry.numAttributes = attributes.size() * 3;
+	geometry.indices = (uint3*) dIndices.d_pointer();
+	geometry.attributes = (float3*) dAttributes.d_pointer();
+	//geometry.numIndices = indices.size() * 3;
+	//geometry.numAttributes = attributes.size() * 3;
 	geometry.gas = outputBuffer.d_pointer();
 
 	geoDatas.push_back(geometry);
@@ -336,8 +347,8 @@ void OptiXRenderer::createInstances() {
 			instance.transform[j] = tmp[j];
 		// TODO
 		// instance.sbtOffset = NUM_RAY_TYPES * hitRecord;   RAY 수 늘리면 어떻게 되는지 생각해야함 
-		instance.sbtOffset = 0; //RAY_TYPE_COUNT * geoDatas.size();
-		instance.visibilityMask = 255;
+		instance.sbtOffset = 0; //i * RAY_TYPE_COUNT; //RAY_TYPE_COUNT * geoDatas.size();
+		instance.visibilityMask = OptixVisibilityMask(255);
 		instance.flags = OPTIX_INSTANCE_FLAG_NONE;
 		instance.traversableHandle = geoTraversableHandle[i];
 		instance.instanceId = i;
@@ -348,6 +359,10 @@ void OptiXRenderer::createInstances() {
 OptixTraversableHandle OptiXRenderer::createInstancesAS() {
 	CUDABuffer instancesBuffer;
 	instancesBuffer.alloc_and_upload<OptixInstance>(instances);
+
+	//OptixBuildInputInstanceArray instanceInput = {};
+	//instanceInput.numInstances = 1;
+	//instanceInput.instances = instancesBuffer.d_pointer();
 
 	OptixBuildInput instanceInput = {};
 
@@ -388,15 +403,23 @@ OptixTraversableHandle OptiXRenderer::createInstancesAS() {
 }
 
 void OptiXRenderer::render(size_t width, size_t height) {
-	//if(launchParams.frameSize.x != width || launchParams.frameSize.y != height){
-		renderBuffer.resize(width * height * sizeof(vec4));
-		launchParams.colorBuffer = (vec4*)renderBuffer.d_pointer();
-		//launchParams.frameSize.x = width;
-		//launchParams.frameSize.y = height;
-		launchParams.traversable = insTraversableHandle;
-	//}
-	launchParamsBuffer.upload(&launchParams, 1);
-	printf("%d,\n\n", launchParamsBuffer.sizeInBytes);
+	if(launchData.frameSize.x != width || launchData.frameSize.y != height){
+		launchData.frameSize.x = width;
+		launchData.frameSize.y = height;
+		launchData.traversable = insTraversableHandle;
+		renderBuffer.resize(width * height * sizeof(uint32_t));
+		launchData.colorBuffer = (uint32_t*)renderBuffer.d_pointer();
+	}
+	auto& camera = EditMode::getEditMode().camera;
+	launchData.camera.position = make_float3(camera.eye.x, camera.eye.y, camera.eye.z);
+	launchData.camera.direction = normalize(make_float3(camera.cen.x - camera.eye.x, camera.cen.y - camera.eye.y, camera.cen.z - camera.eye.z));
+	float3 up = make_float3(camera.up.x, camera.up.y, camera.up.z);
+	const float aspect = (float)width / (float)height;
+	launchData.camera.horizontal = camera.cosFovy * aspect * normalize(cross(launchData.camera.direction, up));
+	launchData.camera.vertical = camera.cosFovy * normalize(cross(launchData.camera.horizontal, launchData.camera.direction));
+
+
+	launchDataBuffer.upload(&launchData, 1);
 
 	OPTIX_CHECK(optixLaunch(
 		pipeline, cudaStream,
@@ -405,11 +428,13 @@ void OptiXRenderer::render(size_t width, size_t height) {
 		&sbt,
 		width,
 		height,
-		//launchParams.frameSize.x,
-		//launchParams.frameSize.y,
 		1
 	));
 	CUDA_SYNC_CHECK();
+}
+
+void OptiXRenderer::downloadPixels(uint32_t* h_pixels) {
+	renderBuffer.download<uint32_t>(h_pixels, launchData.frameSize.x * launchData.frameSize.y);
 }
 
 void OptiXRenderer::updateInstancesAS() {

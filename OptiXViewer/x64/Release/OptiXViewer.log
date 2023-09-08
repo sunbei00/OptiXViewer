@@ -1,36 +1,7 @@
 ﻿  Compiling CUDA source file devicePrograms.cu...
   
   C:\optix\OptiXViewer\OptiXViewer>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.0\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.29.30133\bin\HostX86\x64" -x cu   -I"C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.4.0\inclue\\" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.0\include\\" -IC:\optix\OptiXViewer\OptiXViewer\3rdParty\ -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.0\include" --source-in-ptx    --keep-dir x64\Release -maxrregcount=0  --machine 64 -ptx -cudart static  -o x64\Release\devicePrograms.cu.obj "C:\optix\OptiXViewer\OptiXViewer\devicePrograms.cu" 
-C:/optix/OptiXViewer/OptiXViewer/devicePrograms.cu(50): warning : variable "r" was declared but never referenced
-  
-C:/optix/OptiXViewer/OptiXViewer/devicePrograms.cu(51): warning : variable "g" was declared but never referenced
-  
-C:/optix/OptiXViewer/OptiXViewer/devicePrograms.cu(52): warning : variable "b" was declared but never referenced
-  
-C:/optix/OptiXViewer/OptiXViewer/devicePrograms.cu(11): warning : function "unpackPointer" was declared but never referenced
-  
-C:/optix/OptiXViewer/OptiXViewer/devicePrograms.cu(19): warning : function "packPointer" was declared but never referenced
-  
 C:/optix/OptiXViewer/OptiXViewer/devicePrograms.cu(7): warning : extern declaration of the entity optixLaunchParams is treated as a static definition
   
   devicePrograms.cu
-  Main.cpp
-C:\optix\OptiXViewer\OptiXViewer\Camera.h(22,10): warning C4305: '초기화 중': 'double'에서 'float'(으)로 잘립니다.
-  OptiXRenderer.cpp
-C:\optix\OptiXViewer\OptiXViewer\Camera.h(22,10): warning C4305: '초기화 중': 'double'에서 'float'(으)로 잘립니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(223,9): warning C4477: 'printf' : 서식 문자열 '%d'에 'int' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'unsigned __int64'입니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(223,9): message : 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(239,9): warning C4477: 'printf' : 서식 문자열 '%d'에 'int' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'unsigned __int64'입니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(239,9): message : 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(253,9): warning C4477: 'printf' : 서식 문자열 '%d'에 'int' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'unsigned __int64'입니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(253,9): message : 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(356,61): warning C4267: '=': 'size_t'에서 'unsigned int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(399,9): warning C4477: 'printf' : 서식 문자열 '%d'에 'int' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(399,9): message : 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:\optix\OptiXViewer\OptiXViewer\OptiXRenderer.cpp(411,1): warning C4267: '인수': 'size_t'에서 'unsigned int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-  코드를 생성하고 있습니다.
-  5 of 3739 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    22 functions had inline decision re-evaluated but remain unchanged
-  코드를 생성했습니다.
   OptiXViewer.vcxproj -> C:\optix\OptiXViewer\OptiXViewer\OptiXViewer.exe

@@ -952,6 +952,7 @@
     <ClInclude Include="3rdParty\optix\Exception.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GeometryData.h" />
+    <ClInclude Include="helper_math.h" />
     <ClInclude Include="LaunchParams.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="OptiXRenderer.h" />

@@ -2405,6 +2405,9 @@
     <ClInclude Include="GeometryData.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="helper_math.h">
+      <Filter>3rdParty\optix</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="3rdParty\glm\detail\func_common.inl">

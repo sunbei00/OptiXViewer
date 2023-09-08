@@ -12,6 +12,7 @@
 
 class OptiXRenderer {
 private:
+	void initLaunchParams();
 	void initOptix();
 	void createContext();
 	void createModule();
@@ -48,9 +49,9 @@ private:
 
 	LaunchParams launchParams = {};
 	CUDABuffer   launchParamsBuffer;
+	CUDABuffer launchDataBuffer;
 
 	CUDABuffer renderBuffer;
-	CUDABuffer colorBuffer;
 public:
 	OptiXRenderer();
 	void buildSBT();
@@ -59,5 +60,8 @@ public:
 	void updateInstancesAS();
 	void createInstances();
 	void render(size_t width, size_t height);
+	void downloadPixels(uint32_t* h_pixels);
+
+	LaunchData launchData = {};
 };
 
