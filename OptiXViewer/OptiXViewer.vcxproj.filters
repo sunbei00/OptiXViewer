@@ -78,6 +78,9 @@
     <ClCompile Include="OptiXRenderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -2397,6 +2400,9 @@
       <Filter>3rdParty\TinyObjectLoader</Filter>
     </ClInclude>
     <ClInclude Include="Model.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometryData.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

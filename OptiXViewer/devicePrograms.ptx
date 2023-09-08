@@ -31,7 +31,7 @@
 
 
 
-	.loc 1 41 4
+	.loc 1 41 3
 	ret;
 }
 
@@ -55,9 +55,10 @@
 
 
 
-	.loc 1 47 1
+	.loc 1 56 1
 	ret;
 }
 
-	.file	1 "D:\\source\\repos\\OptiX_Viewer\\OptiXViewer\\OptiXViewer\\devicePrograms.cu", 1693992730, 1197
+	.file	1 "C:\\optix\\OptiXViewer\\OptiXViewer\\devicePrograms.cu", 1694147246, 1550
+	.file	2 "C:\\ProgramData\\NVIDIA Corporation\\OptiX SDK 7.4.0\\include\\internal/optix_7_device_impl.h", 1635981708, 336271
 

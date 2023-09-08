@@ -1,11 +1,13 @@
 #pragma once
 #include "LaunchParams.h"
 #include "optix/CUDABuffer.h"
-#include <cuda.h>
+#include "Model.h"
+#include "GeometryData.h"
 #include <optix.h>
 #include <optix_stubs.h>
 #include <driver_types.h>
 #include <vector>
+
 
 
 class OptiXRenderer {
@@ -17,7 +19,6 @@ private:
 	void createMissPrograms();
 	void createHitPrograms();
 	void createPipeline();
-	void buildSBT();
 
 	CUcontext cudaContext;
 	CUstream cudaStream;
@@ -40,12 +41,23 @@ private:
 	CUDABuffer hitgroupRecordsBuffer;
 
 	OptixShaderBindingTable sbt = {};
+	std::vector<GeometryData> geoDatas;
+	std::vector<OptixTraversableHandle> geoTraversableHandle;
+	std::vector<OptixInstance> instances;
+	OptixTraversableHandle insTraversableHandle;
 
-	LaunchParams launchParams;
-	
+	LaunchParams launchParams = {};
+	CUDABuffer   launchParamsBuffer;
+
+	CUDABuffer renderBuffer;
+	CUDABuffer colorBuffer;
 public:
 	OptiXRenderer();
-
-
+	void buildSBT();
+	OptixTraversableHandle createGeometryAS(ObjectModel& model);
+	OptixTraversableHandle createInstancesAS();
+	void updateInstancesAS();
+	void createInstances();
+	void render(size_t width, size_t height);
 };
 

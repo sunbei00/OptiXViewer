@@ -12,8 +12,9 @@ struct Camera {
 	glm::vec3 eye;
 	glm::vec3 cen;
 	glm::vec3 up;
-	float near;
-	float far;
+	float nearLen;
+	float farLen;
+	int width, height;
 };
 
 class EditMode {

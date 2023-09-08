@@ -24,8 +24,8 @@ void EditMode::setCamera(Camera camera)
 	this->camera.eye = camera.eye;
 	this->camera.cen = camera.cen;
 	this->camera.up = camera.up;
-	this->camera.near = camera.near;
-	this->camera.far = camera.far;
+	this->camera.nearLen = camera.nearLen;
+	this->camera.farLen = camera.farLen;
 }
 
 void EditMode::updateCamera()
@@ -85,10 +85,10 @@ glm::mat4 EditMode::getCT()
 
 glm::mat4 EditMode::getPT(int displayW, int displayH)
 {
-	return glm::perspective(glm::radians(60.0f), (float)displayW / (float)displayH, camera.near, camera.far);
+	return glm::perspective(glm::radians(60.0f), (float)displayW / (float)displayH, camera.nearLen, camera.farLen);
 }
 
 glm::mat4 EditMode::getT(int displayW, int displayH)
 {
-	return glm::perspective(glm::radians(60.0f), (float)displayW / (float)displayH, camera.near, camera.far) * glm::lookAt(camera.eye, camera.cen, camera.up);
+	return glm::perspective(glm::radians(60.0f), (float)displayW / (float)displayH, camera.nearLen, camera.farLen) * glm::lookAt(camera.eye, camera.cen, camera.up);
 }

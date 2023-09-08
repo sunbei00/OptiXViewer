@@ -11,7 +11,7 @@
 .address_size 64
 
 	// .globl	__closesthit__radiance
-.const .align 1 .b8 optixLaunchParams[1];
+.const .align 8 .b8 optixLaunchParams[16];
 
 .visible .entry __closesthit__radiance(
 

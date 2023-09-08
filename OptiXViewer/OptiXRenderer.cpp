@@ -3,12 +3,15 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include <fstream>
+#include "Camera.h"
+
 
 #define MAX_TRACE_DEPTH 2
 
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) NullRecord
 {
 	__align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
+	void* data;
 };
 
 template<typename T>
@@ -18,11 +21,17 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) DataRecord
 	T data;
 };
 
+struct GeometryRecord {
+	CUdeviceptr indices;
+	CUdeviceptr attributes;
+};
+
 using RaygenRecord = NullRecord;
 using MissRecord = NullRecord;
-using HitRecord = NullRecord;
+using HitRecord = DataRecord<GeometryRecord>;
 
 OptiXRenderer::OptiXRenderer() {
+	launchParamsBuffer.alloc(sizeof(LaunchParams));
 	initOptix();
 	createContext();
 	createModule();
@@ -30,7 +39,6 @@ OptiXRenderer::OptiXRenderer() {
 	createMissPrograms();
 	createHitPrograms();
 	createPipeline();
-	buildSBT();
 }
 
 
@@ -92,7 +100,7 @@ void OptiXRenderer::createModule() {
 		str.assign(buffer.begin(), buffer.end());
 	}
 
-	
+
 	char log[2048];
 	size_t sizeof_log = sizeof(log);
 #if OPTIX_VERSION >= 70700
@@ -106,7 +114,7 @@ void OptiXRenderer::createModule() {
 
 void OptiXRenderer::createRaygenPrograms() {
 	raygenPGs.resize(1);
-	
+
 	OptixProgramGroupOptions pgOptions = {};
 	OptixProgramGroupDesc pgDesc = {};
 	pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
@@ -148,13 +156,13 @@ void OptiXRenderer::createHitPrograms() {
 	OptixProgramGroupDesc pgDesc = {};
 	pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
 	pgDesc.hitgroup.moduleAH = module;
-	pgDesc.hitgroup.moduleCH= module;
+	pgDesc.hitgroup.moduleCH = module;
 
 	pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__radiance";
 	pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
 
 	OPTIX_CHECK(optixProgramGroupCreate(optixContext, &pgDesc, 1, &pgOptions, log, &sizeof_log, &hitgroupPGs[RAY_TYPE_GEN]));
-	if (sizeof_log > 1) 
+	if (sizeof_log > 1)
 		PRINT(log);
 }
 
@@ -173,12 +181,12 @@ void OptiXRenderer::createPipeline() {
 		&pipelineCompileOptions,
 		&pipelineLinkOptions,
 		programGroups.data(),
-		(int)programGroups.size(),
+		(unsigned int) programGroups.size(),
 		log, &sizeof_log,
 		&pipeline
 	));
 	if (sizeof_log > 1) PRINT(log);
-	
+
 #pragma region not_use
 	//const OptixStackSizes stackSizes;
 	//stackSizes.cssAH;
@@ -200,18 +208,19 @@ void OptiXRenderer::createPipeline() {
 	//	&continuationStackSize));
 #pragma endregion
 
-	OPTIX_CHECK(optixPipelineSetStackSize (pipeline, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH));
+	OPTIX_CHECK(optixPipelineSetStackSize(pipeline, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH));
 	if (sizeof_log > 1) PRINT(log);
 }
 
 void OptiXRenderer::buildSBT() {
-
 	std::vector<RaygenRecord> raygenRecords;
 	for (int i = 0; i < raygenPGs.size(); i++) {
 		RaygenRecord rec;
 		OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i], &rec));
+		rec.data = nullptr;
 		raygenRecords.push_back(rec);
 	}
+	printf("ray gen record : %d\n", raygenRecords.size());
 	rayGenRecordsBuffer.alloc_and_upload(raygenRecords);
 	sbt.raygenRecord = rayGenRecordsBuffer.d_pointer();
 
@@ -219,38 +228,206 @@ void OptiXRenderer::buildSBT() {
 	for (int i = 0; i < missPGs.size(); i++) {
 		MissRecord rec;
 		OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i], &rec));
+		rec.data = nullptr;
 		missRecords.push_back(rec);
 	}
 	missRecordBuffer.alloc_and_upload(missRecords);
 	sbt.missRecordBase = missRecordBuffer.d_pointer();
 	sbt.missRecordStrideInBytes = sizeof(MissRecord);
-	sbt.missRecordCount = (int)missRecords.size();
+	sbt.missRecordCount = (unsigned int)missRecords.size();
 
+	printf("missRecord record : %d\n", missRecords.size());
 
-	//int numObjects = (int)model->meshes.size();
-	//std::vector<HitRecord> hitgroupRecords;
-	//for (int meshID = 0; meshID < numObjects; meshID++) {
-	//	auto mesh = model->meshes[meshID];
+	int numObjects = (int)geoDatas.size();
+	std::vector<HitRecord> hitgroupRecords;
+	for (int meshID = 0; meshID < numObjects; meshID++) {
+		auto& mesh = geoDatas[meshID];
 
-	//	HitRecord rec;
-	//	// hitgroupPgs[0] -> hitgroupPGs[meshID] 수정함.
-	//	OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[meshID], &rec));
-	//	rec.data.color = mesh->diffuse;
-	//	if (mesh->diffuseTextureID >= 0) {
-	//		rec.data.hasTexture = true;
-	//		rec.data.texture = textureObjects[mesh->diffuseTextureID];
-	//	}
-	//	else {
-	//		rec.data.hasTexture = false;
-	//	}
-	//	rec.data.index = (vec3i*)indexBuffer[meshID].d_pointer();
-	//	rec.data.vertex = (vec3f*)vertexBuffer[meshID].d_pointer();
-	//	rec.data.normal = (vec3f*)normalBuffer[meshID].d_pointer();
-	//	rec.data.texcoord = (vec2f*)texcoordBuffer[meshID].d_pointer();
-	//	hitgroupRecords.push_back(rec);
-	//}
-	//hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
-	//sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
-	//sbt.hitgroupRecordStrideInBytes = sizeof(HitRecord);
-	//sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
+		HitRecord rec;
+		// hitgroupPgs[0] -> hitgroupPGs[meshID] 수정함.
+		OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
+		//rec.data.color = mesh->diffuse;
+		rec.data = GeometryRecord{ mesh.indices , mesh.attributes };
+		hitgroupRecords.push_back(rec);
+	}
+	printf("hit group record : %d\n", hitgroupRecords.size());
+	hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
+	sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
+	sbt.hitgroupRecordStrideInBytes = sizeof(HitRecord);
+	sbt.hitgroupRecordCount = (unsigned int)hitgroupRecords.size();
 }
+
+
+OptixTraversableHandle OptiXRenderer::createGeometryAS(ObjectModel& model) {
+	auto& attributes = model.vertices;
+	auto& indices = model.indices;
+	CUDABuffer dAttributes;
+	CUDABuffer dIndices;
+
+	dAttributes.alloc_and_upload<glm::vec3>(attributes);
+	dIndices.alloc_and_upload<glm::ivec3>(indices);
+
+	OptixBuildInput triangleInput = {};
+
+	triangleInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+
+	triangleInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+	triangleInput.triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
+	triangleInput.triangleArray.numVertices = (unsigned int)attributes.size();
+	CUdeviceptr tmp = dAttributes.d_pointer();
+	triangleInput.triangleArray.vertexBuffers = &tmp;
+
+	triangleInput.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+	triangleInput.triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
+	triangleInput.triangleArray.numIndexTriplets = (unsigned int)indices.size();
+	triangleInput.triangleArray.indexBuffer = dIndices.d_pointer();
+
+	unsigned int triangleInputFlags[1] = { OPTIX_GEOMETRY_FLAG_NONE };
+
+	triangleInput.triangleArray.flags = triangleInputFlags;
+	triangleInput.triangleArray.numSbtRecords = 1;
+
+	OptixAccelBuildOptions accelBuildOptions = {};
+
+	accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_NONE;
+	accelBuildOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
+
+	OptixAccelBufferSizes accelBufferSizes;
+
+	OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext, &accelBuildOptions, &triangleInput, (unsigned int)1, &accelBufferSizes));
+
+	CUDABuffer tempBuffer;
+	CUDABuffer outputBuffer;
+	tempBuffer.alloc(accelBufferSizes.tempSizeInBytes);
+	outputBuffer.alloc(accelBufferSizes.outputSizeInBytes);
+
+	OptixTraversableHandle traversableHandle = 0;
+
+	OPTIX_CHECK(optixAccelBuild(
+		optixContext, cudaStream, &accelBuildOptions, &triangleInput, 1, tempBuffer.d_pointer(),
+		tempBuffer.sizeInBytes, outputBuffer.d_pointer(), outputBuffer.sizeInBytes, &traversableHandle, nullptr, 0));
+
+	CUDA_SYNC_CHECK();
+
+	tempBuffer.free();
+
+	GeometryData geometry;
+
+	geometry.indices = dIndices.d_pointer();
+	geometry.attributes = dAttributes.d_pointer();
+	geometry.numIndices = indices.size() * 3;
+	geometry.numAttributes = attributes.size() * 3;
+	geometry.gas = outputBuffer.d_pointer();
+
+	geoDatas.push_back(geometry);
+	geoTraversableHandle.push_back(traversableHandle);
+	return traversableHandle;
+}
+
+void OptiXRenderer::createInstances() {
+	for (int i = 0; i < geoTraversableHandle.size(); i++) {
+		OptixInstance instance;
+		// row-wise
+		float tmp[12] = {	1,0,0,
+							0,1,0,
+							0,0,1, 
+							0,0,0};
+		for (int j = 0; j < 12; j++)
+			instance.transform[j] = tmp[j];
+		// TODO
+		// instance.sbtOffset = NUM_RAY_TYPES * hitRecord;   RAY 수 늘리면 어떻게 되는지 생각해야함 
+		instance.sbtOffset = 0; //RAY_TYPE_COUNT * geoDatas.size();
+		instance.visibilityMask = 255;
+		instance.flags = OPTIX_INSTANCE_FLAG_NONE;
+		instance.traversableHandle = geoTraversableHandle[i];
+		instance.instanceId = i;
+		instances.push_back(instance);
+	}
+}
+
+OptixTraversableHandle OptiXRenderer::createInstancesAS() {
+	CUDABuffer instancesBuffer;
+	instancesBuffer.alloc_and_upload<OptixInstance>(instances);
+
+	OptixBuildInput instanceInput = {};
+
+	instanceInput.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
+	instanceInput.instanceArray.instances = instancesBuffer.d_pointer();
+	instanceInput.instanceArray.numInstances = instances.size();
+
+	OptixAccelBuildOptions accelBuildOptions = {};
+
+	accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_NONE;// | OPTIX_BUILD_FLAG_ALLOW_UPDATE;
+	accelBuildOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
+
+	OptixAccelBufferSizes accelBufferSizes;
+	OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext, &accelBuildOptions, &instanceInput, 1, &accelBufferSizes));
+
+	CUDABuffer tempBuffer;
+	CUDABuffer outputBuffer;
+	tempBuffer.alloc(accelBufferSizes.tempSizeInBytes);
+	outputBuffer.alloc(accelBufferSizes.outputSizeInBytes);
+
+	OptixTraversableHandle traversableHandle;
+
+	OPTIX_CHECK(optixAccelBuild(optixContext, cudaStream,
+		&accelBuildOptions, &instanceInput, 1,
+		tempBuffer.d_pointer(), accelBufferSizes.tempSizeInBytes,
+		outputBuffer.d_pointer(), accelBufferSizes.outputSizeInBytes,
+		&traversableHandle, nullptr, 0));
+
+	CUDA_SYNC_CHECK();
+
+
+	tempBuffer.free();
+	instancesBuffer.free();
+
+	insTraversableHandle = traversableHandle;
+
+	return traversableHandle;
+}
+
+void OptiXRenderer::render(size_t width, size_t height) {
+	//if(launchParams.frameSize.x != width || launchParams.frameSize.y != height){
+		renderBuffer.resize(width * height * sizeof(vec4));
+		launchParams.colorBuffer = (vec4*)renderBuffer.d_pointer();
+		//launchParams.frameSize.x = width;
+		//launchParams.frameSize.y = height;
+		launchParams.traversable = insTraversableHandle;
+	//}
+	launchParamsBuffer.upload(&launchParams, 1);
+	printf("%d,\n\n", launchParamsBuffer.sizeInBytes);
+
+	OPTIX_CHECK(optixLaunch(
+		pipeline, cudaStream,
+		launchParamsBuffer.d_pointer(),
+		launchParamsBuffer.sizeInBytes,
+		&sbt,
+		width,
+		height,
+		//launchParams.frameSize.x,
+		//launchParams.frameSize.y,
+		1
+	));
+	CUDA_SYNC_CHECK();
+}
+
+void OptiXRenderer::updateInstancesAS() {
+
+}
+
+
+//void SampleRenderer::setCamera(const Camera& camera)
+//{
+//	lastSetCamera = camera;
+//	launchParams.camera.position = camera.from;
+//	launchParams.camera.direction = normalize(camera.at - camera.from);
+//	const float cosFovy = 0.66f;
+//	const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
+//	launchParams.camera.horizontal
+//		= cosFovy * aspect * normalize(cross(launchParams.camera.direction,
+//			camera.up));
+//	launchParams.camera.vertical
+//		= cosFovy * normalize(cross(launchParams.camera.horizontal,
+//			launchParams.camera.direction));
+//}
