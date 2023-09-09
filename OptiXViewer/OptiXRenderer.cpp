@@ -7,7 +7,7 @@
 #include "helper_math.h"
 
 
-#define MAX_TRACE_DEPTH 4
+#define MAX_TRACE_DEPTH 31
 
 struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) NullRecord
 {
@@ -243,7 +243,7 @@ void OptiXRenderer::createPipeline() {
 	//	&continuationStackSize));
 #pragma endregion
 
-	OPTIX_CHECK(optixPipelineSetStackSize(pipeline, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH * 1024 * 2, MAX_TRACE_DEPTH));
+	OPTIX_CHECK(optixPipelineSetStackSize(pipeline, (MAX_TRACE_DEPTH > 2 ? 5 : MAX_TRACE_DEPTH) * 1024, (MAX_TRACE_DEPTH > 2 ? 5 : MAX_TRACE_DEPTH) * 1024, (MAX_TRACE_DEPTH > 2 ? 5 : MAX_TRACE_DEPTH) * 1024 * 2, MAX_TRACE_DEPTH));
 	if (sizeof_log > 1) PRINT(log);
 }
 
@@ -273,15 +273,18 @@ void OptiXRenderer::buildSBT() {
 
 	printf("missRecord record : %d\n", missRecords.size());
 
-	int numObjects = (int)geoDatas.size();
+
 	std::vector<HitRecord> hitgroupRecords;
-	for (int meshID = 0; meshID < numObjects; meshID++) {
+	dMaterialList.resize(materialList.size());
+	for (int meshID = 0; meshID < geoDatas.size(); meshID++) {
 		auto& mesh = geoDatas[meshID];
+		dMaterialList[meshID].alloc(sizeof(Material));
+		dMaterialList[meshID].upload(&materialList[meshID], 1);
+
 		for (int shadowCount = 0; shadowCount < RAY_TYPE_COUNT; shadowCount++) {
 			HitRecord rec;
 			OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[shadowCount], &rec));
-			//rec.data.color = mesh->diffuse;
-			rec.data = GeometryRecord{ mesh.indices , mesh.attributes };
+			rec.data = GeometryRecord{ mesh.indices , mesh.attributes , (Material*) dMaterialList[meshID].d_pointer()};
 			hitgroupRecords.push_back(rec);
 		}
 	}
@@ -369,11 +372,12 @@ void OptiXRenderer::createInstances() {
 		float* transformationMatrix = transformation.getMatrix(&size);
 		memcpy(instance.transform, transformationMatrix, sizeof(float) * size);
 		delete[] transformationMatrix;
+		
+		Material material;
+		materialList.push_back(material);
 
 		instance.instanceId = instances.size();
-		// TODO
-		// instance.sbtOffset = NUM_RAY_TYPES * hitRecord;   RAY 수 늘리면 어떻게 되는지 생각해야함 
-		instance.sbtOffset = i* RAY_TYPE_COUNT; //RAY_TYPE_COUNT * geoDatas.size();
+		instance.sbtOffset = i* RAY_TYPE_COUNT; 
 		instance.visibilityMask = OptixVisibilityMask(255);
 		instance.flags = OPTIX_INSTANCE_FLAG_NONE;
 		instance.traversableHandle = geoTraversableHandle[i];
@@ -438,6 +442,12 @@ void OptiXRenderer::updateInstancesAS() {
 		&insTraversableHandle, nullptr, 0));
 }
 
+void OptiXRenderer::updateMaterial(size_t index) {
+	if (index > materialList.size())
+		return;
+	dMaterialList[index].upload(&materialList[index], 1);
+}
+
 
 void OptiXRenderer::render(size_t width, size_t height) {
 	if(launchData.frameSize.x != width || launchData.frameSize.y != height){
@@ -454,7 +464,8 @@ void OptiXRenderer::render(size_t width, size_t height) {
 	const float aspect = (float)width / (float)height;
 	launchData.camera.horizontal = camera.cosFovy * aspect * normalize(cross(launchData.camera.direction, up));
 	launchData.camera.vertical = camera.cosFovy * normalize(cross(launchData.camera.horizontal, launchData.camera.direction));
-
+	launchData.light.spotDir = normalize(launchData.light.spotDir);
+	launchData.frame += 1;
 
 	launchDataBuffer.upload(&launchData, 1);
 

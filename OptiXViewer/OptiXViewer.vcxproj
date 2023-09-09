@@ -954,9 +954,12 @@
     <ClInclude Include="GeometryData.h" />
     <ClInclude Include="helper_math.h" />
     <ClInclude Include="LaunchParams.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="OptiXRenderer.h" />
+    <ClInclude Include="PRD.h" />
+    <ClInclude Include="random.h" />
     <ClInclude Include="tinyObjLoader.h" />
     <ClInclude Include="Transformation.h" />
   </ItemGroup>

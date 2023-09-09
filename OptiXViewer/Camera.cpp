@@ -41,7 +41,6 @@ void EditMode::updateCamera()
 		return;
 	}
 	if (glm::abs(io.MouseWheel) >= 0.1f) {
-		printf("%f", io.MouseWheel);
 		glm::vec3 move = io.MouseWheel * (camera.cen - camera.eye);
 		camera.eye = camera.eye + move;
 		camera.cen = camera.cen + move;

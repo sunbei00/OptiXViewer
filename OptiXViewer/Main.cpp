@@ -155,6 +155,7 @@ int main(int, char**) {
 		// imgui renderering
 		ImGui::Begin("Hierarchy");
 		{
+			auto& launchData = optixRenderer.launchData;
 			if (ImGui::TreeNode(std::string("Camera").c_str())) {
 				Camera tmp = EditMode::getEditMode().camera;
 				std::ostringstream oss;
@@ -162,23 +163,65 @@ int main(int, char**) {
 				oss << "eye : " << tmp.eye.x << " " << tmp.eye.y << " " << tmp.eye.z << std::endl;
 				oss << "up : " << tmp.up.x << " " << tmp.up.y << " " << tmp.up.z << std::endl;
 				ImGui::Text(oss.str().c_str());
+				ImGui::DragInt("Trace depth", &launchData.maxTrace, 1, 0, 31);
+				ImGui::TreePop();
+			}
+		}
+		{
+			auto& light = optixRenderer.launchData.light;
+			if (ImGui::TreeNode(std::string("Light").c_str())) {
+				ImGui::DragFloat3("Position", &light.pos.x, 0.2f);
+				ImGui::DragFloat3("color", &light.color.x, 0.2f, 0, 1);
+				ImGui::DragFloat3("uv", &light.uv.x, 0.2f, 0, 1000.f);
+				ImGui::DragFloat("Ambient", &light.ambient.x, 0.01f, 0.f, 1.f);
+
+				ImGui::Checkbox("isSpot", &light.isSpot);
+				if (light.isSpot) {
+					ImGui::DragFloat3("spotDir", &light.spotDir.x, 0.2f);
+					ImGui::DragFloat("angle", &light.angle.x, 0.2f, 0, 360.f);
+				}
 				ImGui::TreePop();
 			}
 		}
 		{
 			auto& tList = optixRenderer.transformationList;
+			auto& matList = optixRenderer.materialList;
 
-			bool isChange = false;
+			bool isChangeTransform = false;
+			bool isChangeMaterial = false;
 			for (int i = 0; i < tList.size(); i++) {
 				if (ImGui::TreeNode(std::string("Index : " + std::to_string(i)).c_str())) {
-					isChange |= ImGui::DragFloat3("Position", (float*)&tList[i].mTanslation, 0.2f);
-					isChange |= ImGui::DragFloat3("Rotation", (float*)&tList[i].mRotation, 0.2f, 0, 360);
-					isChange |= ImGui::DragFloat3("Scale", (float*)&tList[i].mScale, 0.2f, 0.1);
+					isChangeMaterial = false;
+
+					isChangeTransform |= ImGui::DragFloat3("Position", (float*)&tList[i].mTanslation, 0.2f);
+					isChangeTransform |= ImGui::DragFloat3("Rotation", (float*)&tList[i].mRotation, 0.2f, 0, 360);
+					isChangeTransform |= ImGui::DragFloat3("Scale", (float*)&tList[i].mScale, 0.2f, 0.1);
+
+					isChangeMaterial |= ImGui::DragFloat3("color", &matList[i].color.x, 0.05, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat3("emission", &matList[i].emission.x, 0.05, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("matallic", &matList[i].metallic, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("subsurface", &matList[i].subsurface, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("specular", &matList[i].specular, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("roughness", &matList[i].roughness, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("specularTint", &matList[i].specularTint, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("anisotropic", &matList[i].anisotropic, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("sheen", &matList[i].sheen, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("sheenTint", &matList[i].sheenTint, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("clearcoat", &matList[i].clearcoat, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("clearcoatGloss", &matList[i].clearcoatGloss, 0.01, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat("throughput", &matList[i].troughtput, 0.01, 0, 1);
+
+					isChangeMaterial |= ImGui::Checkbox("isPlane", &matList[i].isPlane);
+					if (matList[i].isPlane)
+						isChangeMaterial |= ImGui::DragFloat("gridSize", &matList[i].gridSize, 0.05, 0.1f, 10.f);
+
+					if (isChangeMaterial)
+						optixRenderer.updateMaterial(i);
 
 					ImGui::TreePop();
 				}
 			}
-			if (isChange)
+			if (isChangeTransform)
 				optixRenderer.updateInstancesAS();
 		}
 

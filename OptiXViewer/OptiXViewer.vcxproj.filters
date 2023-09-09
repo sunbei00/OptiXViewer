@@ -2414,6 +2414,15 @@
     <ClInclude Include="Material.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PRD.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="random.h">
+      <Filter>3rdParty\optix</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="3rdParty\glm\detail\func_common.inl">

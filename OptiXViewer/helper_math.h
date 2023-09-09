@@ -1467,4 +1467,14 @@ inline __device__ __host__ float4 smoothstep(float4 a, float4 b, float4 x)
     return (y * y * (make_float4(3.0f) - (make_float4(2.0f) * y)));
 }
 
+
+inline __host__ __device__ float3 faceforward(float3 ret, float3 ray, float3 ng) {
+    if (dot(ray, ng) >= 0.f) 
+        return ret;
+    else
+        return -1 * ret;
+}
+
+
+
 #endif

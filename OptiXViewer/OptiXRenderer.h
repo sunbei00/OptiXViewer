@@ -3,6 +3,7 @@
 #include "optix/CUDABuffer.h"
 #include "GeometryData.h"
 #include "Transformation.h"
+#include "Material.h"
 #include "Model.h"
 #include <optix.h>
 #include <optix_stubs.h>
@@ -47,12 +48,13 @@ private:
 	std::vector<OptixTraversableHandle> geoTraversableHandle;
 	std::vector<OptixInstance> instances;
 
+	std::vector<CUDABuffer> dMaterialList;
+
 	LaunchParams launchParams = {};
 	CUDABuffer   launchParamsBuffer;
 	CUDABuffer launchDataBuffer;
 
 	CUDABuffer renderBuffer;
-
 
 	// for update IAS
 	OptixAccelBufferSizes accelBufferSizes;
@@ -66,8 +68,9 @@ private:
 public:
 	OptiXRenderer();
 	void buildSBT();
-	void updateInstancesAS();
 	void createInstances();
+	void updateInstancesAS();
+	void updateMaterial(size_t index);
 	void render(size_t width, size_t height);
 	void downloadPixels(uint32_t* h_pixels);
 	OptixTraversableHandle createGeometryAS(ObjectModel& model);
@@ -75,5 +78,6 @@ public:
 
 	LaunchData launchData = {};
 	std::vector<Transformation> transformationList;
+	std::vector<Material> materialList;
 };
 
