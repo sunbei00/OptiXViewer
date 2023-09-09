@@ -9,18 +9,17 @@ enum class MouseState {
 };
 
 struct Camera {
-	glm::vec3 eye;
 	glm::vec3 cen;
+	glm::vec3 eye;
 	glm::vec3 up;
 	float nearLen;
 	float farLen;
 	float cosFovy;
-	// int width, height;
 };
 
 class EditMode {
 private:
-	EditMode() : mouseState(MouseState::IDLE), camera({ { 0,0,10 }, { 0,0,0 }, { 0,1,0 }, 0.1, 100 ,0.66f}) {}
+	EditMode() : mouseState(MouseState::IDLE), camera({ { -1.73, 1.636, 1.153 }, { -3.86526,2.401,3.759 }, { 0,1,0 }, 0.1, 100 ,0.66f}) {}
 	MouseState mouseState;
 	static EditMode* editMode;
 public:

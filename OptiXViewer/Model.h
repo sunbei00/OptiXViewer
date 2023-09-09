@@ -15,3 +15,5 @@ public:
 };
 
 std::vector<ObjectModel*> fastLoadOBJModels(const std::string& fileName);
+ObjectModel* createBox();
+ObjectModel* createPlane();

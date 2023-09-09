@@ -120,7 +120,7 @@
 
 )
 {
-	.reg .b32 	%r<6>;
+	.reg .b32 	%r<5>;
 	.reg .b64 	%rd<5>;
 
 
@@ -135,11 +135,59 @@
 	cvt.u64.u32	%rd1, %r1;
 	cvt.u64.u32	%rd2, %r3;
 	bfi.b64 	%rd3, %rd1, %rd2, 32, 32;
-	mov.u64 	%rd4, 1065353216;
+	mov.u64 	%rd4, 0;
 	st.u32 	[%rd3+4], %rd4;
 	st.u32 	[%rd3], %rd4;
-	mov.u32 	%r5, 1065353216;
-	st.u32 	[%rd3+8], %r5;
+	st.u32 	[%rd3+8], %r2;
+	ret;
+}
+
+	// .globl	__closesthit__shadow
+.visible .entry __closesthit__shadow(
+
+)
+{
+
+
+
+	ret;
+}
+
+	// .globl	__anyhit__shadow
+.visible .entry __anyhit__shadow(
+
+)
+{
+
+
+
+	ret;
+}
+
+	// .globl	__miss__shadow
+.visible .entry __miss__shadow(
+
+)
+{
+	.reg .b32 	%r<5>;
+	.reg .b64 	%rd<5>;
+
+
+	mov.u32 	%r2, 0;
+	// inline asm
+	call (%r1), _optix_get_payload, (%r2);
+	// inline asm
+	mov.u32 	%r4, 1;
+	// inline asm
+	call (%r3), _optix_get_payload, (%r4);
+	// inline asm
+	cvt.u64.u32	%rd1, %r1;
+	cvt.u64.u32	%rd2, %r3;
+	bfi.b64 	%rd3, %rd1, %rd2, 32, 32;
+	mov.u64 	%rd4, 0;
+	st.u32 	[%rd3+4], %rd4;
+	st.u32 	[%rd3], %rd4;
+	st.u32 	[%rd3+8], %r2;
 	ret;
 }
 
@@ -148,7 +196,7 @@
 
 )
 {
-	.local .align 4 .b8 	__local_depot3[12];
+	.local .align 4 .b8 	__local_depot6[12];
 	.reg .b64 	%SP;
 	.reg .b64 	%SPL;
 	.reg .f32 	%f<57>;
@@ -156,7 +204,7 @@
 	.reg .b64 	%rd<11>;
 
 
-	mov.u64 	%SPL, __local_depot3;
+	mov.u64 	%SPL, __local_depot6;
 	cvta.local.u64 	%SP, %SPL;
 	add.u64 	%rd2, %SP, 0;
 	add.u64 	%rd3, %SPL, 0;
@@ -181,7 +229,6 @@
 	add.f32 	%f13, %f12, 0f3F000000;
 	cvta.to.global.u64 	%rd7, %rd4;
 	ld.global.v2.u32 	{%r75, %r76}, [%rd7+16];
-	mov.u32 	%r40, 1;
 	cvt.rn.f32.s32	%f14, %r75;
 	cvt.rn.f32.s32	%f15, %r76;
 	div.rn.f32 	%f16, %f11, %f14;
@@ -213,7 +260,7 @@
 	mov.f32 	%f8, 0f60AD78EC;
 	mov.f32 	%f9, 0f00000000;
 	// inline asm
-	call(%r4,%r5,%r6,%r7,%r8,%r9,%r10,%r11,%r12,%r13,%r14,%r15,%r16,%r17,%r18,%r19,%r20,%r21,%r22,%r23,%r24,%r25,%r26,%r27,%r28,%r29,%r30,%r31,%r32,%r33,%r34,%r35),_optix_trace_typed_32,(%r41,%rd1,%f49,%f50,%f18,%f4,%f5,%f6,%f9,%f8,%f9,%r37,%r41,%r41,%r40,%r41,%r42,%r43,%r44,%r79,%r80,%r81,%r82,%r83,%r84,%r85,%r86,%r87,%r88,%r89,%r90,%r91,%r92,%r93,%r94,%r95,%r96,%r97,%r98,%r99,%r100,%r101,%r102,%r103,%r104,%r105,%r106,%r107,%r108);
+	call(%r4,%r5,%r6,%r7,%r8,%r9,%r10,%r11,%r12,%r13,%r14,%r15,%r16,%r17,%r18,%r19,%r20,%r21,%r22,%r23,%r24,%r25,%r26,%r27,%r28,%r29,%r30,%r31,%r32,%r33,%r34,%r35),_optix_trace_typed_32,(%r41,%rd1,%f49,%f50,%f18,%f4,%f5,%f6,%f9,%f8,%f9,%r37,%r41,%r41,%r42,%r41,%r42,%r43,%r44,%r79,%r80,%r81,%r82,%r83,%r84,%r85,%r86,%r87,%r88,%r89,%r90,%r91,%r92,%r93,%r94,%r95,%r96,%r97,%r98,%r99,%r100,%r101,%r102,%r103,%r104,%r105,%r106,%r107,%r108);
 	// inline asm
 	ld.local.f32 	%f51, [%rd3];
 	mul.f32 	%f52, %f51, 0f437FFD71;

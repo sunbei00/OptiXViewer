@@ -1,8 +1,9 @@
 #pragma once
 #include "LaunchParams.h"
 #include "optix/CUDABuffer.h"
-#include "Model.h"
 #include "GeometryData.h"
+#include "Transformation.h"
+#include "Model.h"
 #include <optix.h>
 #include <optix_stubs.h>
 #include <driver_types.h>
@@ -45,24 +46,34 @@ private:
 	std::vector<GeometryData> geoDatas;
 	std::vector<OptixTraversableHandle> geoTraversableHandle;
 	std::vector<OptixInstance> instances;
-	OptixTraversableHandle insTraversableHandle;
 
 	LaunchParams launchParams = {};
 	CUDABuffer   launchParamsBuffer;
 	CUDABuffer launchDataBuffer;
 
 	CUDABuffer renderBuffer;
+
+
+	// for update IAS
+	OptixAccelBufferSizes accelBufferSizes;
+	CUDABuffer instancesBuffer;
+	OptixBuildInput instanceInput = {};
+	CUDABuffer outputBuffer;
+	CUDABuffer tempBuffer;
+	OptixTraversableHandle insTraversableHandle;
+	OptixAccelBuildOptions accelBuildOptions = {};
+
 public:
 	OptiXRenderer();
 	void buildSBT();
-	OptixTraversableHandle createGeometryAS(ObjectModel& model);
-	OptixTraversableHandle createInstancesAS();
 	void updateInstancesAS();
 	void createInstances();
 	void render(size_t width, size_t height);
 	void downloadPixels(uint32_t* h_pixels);
-
+	OptixTraversableHandle createGeometryAS(ObjectModel& model);
+	OptixTraversableHandle createInstancesAS();
 
 	LaunchData launchData = {};
+	std::vector<Transformation> transformationList;
 };
 

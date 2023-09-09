@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 
-enum RAY_TYPE { RAY_TYPE_GEN = 0, RAY_TYPE_COUNT };
+enum RAY_TYPE { RAY_TYPE_GEN = 0 , RAY_TYPE_SHADOW , RAY_TYPE_COUNT };
 
 struct dCamera {
 	float3 position;

@@ -154,6 +154,17 @@ void OptiXRenderer::createMissPrograms() {
 	OPTIX_CHECK(optixProgramGroupCreate(optixContext, &pgDesc, 1, &pgOptions, log, &sizeof_log, &missPGs[RAY_TYPE_GEN]));
 	if (sizeof_log > 1)
 		PRINT(log);
+
+	pgOptions = {};
+	pgDesc = {};
+	pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+	pgDesc.miss.module = module;
+
+	pgDesc.miss.entryFunctionName = "__miss__shadow";
+
+	OPTIX_CHECK(optixProgramGroupCreate(optixContext, &pgDesc, 1, &pgOptions, log, &sizeof_log, &missPGs[RAY_TYPE_SHADOW]));
+	if (sizeof_log > 1)
+		PRINT(log);
 }
 
 void OptiXRenderer::createHitPrograms() {
@@ -172,6 +183,20 @@ void OptiXRenderer::createHitPrograms() {
 	pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
 
 	OPTIX_CHECK(optixProgramGroupCreate(optixContext, &pgDesc, 1, &pgOptions, log, &sizeof_log, &hitgroupPGs[RAY_TYPE_GEN]));
+	if (sizeof_log > 1)
+		PRINT(log);
+
+
+	pgOptions = {};
+	pgDesc = {};
+	pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+	pgDesc.hitgroup.moduleAH = module;
+	pgDesc.hitgroup.moduleCH = module;
+
+	pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__shadow";
+	pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__shadow";
+
+	OPTIX_CHECK(optixProgramGroupCreate(optixContext, &pgDesc, 1, &pgOptions, log, &sizeof_log, &hitgroupPGs[RAY_TYPE_SHADOW]));
 	if (sizeof_log > 1)
 		PRINT(log);
 }
@@ -252,13 +277,13 @@ void OptiXRenderer::buildSBT() {
 	std::vector<HitRecord> hitgroupRecords;
 	for (int meshID = 0; meshID < numObjects; meshID++) {
 		auto& mesh = geoDatas[meshID];
-
-		HitRecord rec;
-		// hitgroupPgs[0] -> hitgroupPGs[meshID] 수정함. -> undo
-		OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-		//rec.data.color = mesh->diffuse;
-		rec.data = GeometryRecord{ mesh.indices , mesh.attributes };
-		hitgroupRecords.push_back(rec);
+		for (int shadowCount = 0; shadowCount < RAY_TYPE_COUNT; shadowCount++) {
+			HitRecord rec;
+			OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[shadowCount], &rec));
+			//rec.data.color = mesh->diffuse;
+			rec.data = GeometryRecord{ mesh.indices , mesh.attributes };
+			hitgroupRecords.push_back(rec);
+		}
 	}
 	hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
 	sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
@@ -339,12 +364,12 @@ void OptiXRenderer::createInstances() {
 	for (int i = 0; i < geoTraversableHandle.size(); i++) {
 		OptixInstance instance = {};
 
-		// row-wise
-		float tmp[12] = {	1,0,0,0,
-							0,1,0,0,
-							0,0,1,0,
-							};
-		memcpy(instance.transform, tmp, sizeof(float) * 12);
+		Transformation transformation;
+		size_t size;
+		float* transformationMatrix = transformation.getMatrix(&size);
+		memcpy(instance.transform, transformationMatrix, sizeof(float) * size);
+		delete[] transformationMatrix;
+
 		instance.instanceId = instances.size();
 		// TODO
 		// instance.sbtOffset = NUM_RAY_TYPES * hitRecord;   RAY 수 늘리면 어떻게 되는지 생각해야함 
@@ -353,29 +378,25 @@ void OptiXRenderer::createInstances() {
 		instance.flags = OPTIX_INSTANCE_FLAG_NONE;
 		instance.traversableHandle = geoTraversableHandle[i];
 		instances.push_back(instance);
+
+		transformationList.push_back(transformation);
 	}
 }
 
 OptixTraversableHandle OptiXRenderer::createInstancesAS() {
-	CUDABuffer instancesBuffer;
 	instancesBuffer.alloc_and_upload<OptixInstance>(instances);
-
-	OptixBuildInput instanceInput = {};
 
 	instanceInput.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
 	instanceInput.instanceArray.instances = instancesBuffer.d_pointer();
 	instanceInput.instanceArray.numInstances = static_cast<unsigned int>(instances.size());  
 
-	OptixAccelBuildOptions accelBuildOptions = {};
 
-	accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_NONE;
+
+	accelBuildOptions.buildFlags = OPTIX_BUILD_FLAG_NONE | OPTIX_BUILD_FLAG_ALLOW_UPDATE;
 	accelBuildOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
 
-	OptixAccelBufferSizes accelBufferSizes;
 	OPTIX_CHECK(optixAccelComputeMemoryUsage(optixContext, &accelBuildOptions, &instanceInput, 1, &accelBufferSizes));
 
-	CUDABuffer tempBuffer;
-	CUDABuffer outputBuffer;
 	tempBuffer.alloc(accelBufferSizes.tempSizeInBytes);
 	outputBuffer.alloc(accelBufferSizes.outputSizeInBytes);
 
@@ -389,14 +410,34 @@ OptixTraversableHandle OptiXRenderer::createInstancesAS() {
 
 	CUDA_SYNC_CHECK();
 
-
-	tempBuffer.free();
-	instancesBuffer.free();
+	// tempBuffer.free();
+	// instancesBuffer.free();
 
 	insTraversableHandle = traversableHandle;
 
 	return traversableHandle;
 }
+
+
+void OptiXRenderer::updateInstancesAS() {
+	size_t size;
+	float* matrix;
+	for (int i = 0; i < instances.size(); i++) {
+		matrix = transformationList[i].getMatrix(&size);
+		memcpy(instances[i].transform, matrix, size * sizeof(float));
+		delete[] matrix;
+	}
+	instancesBuffer.upload<OptixInstance>(instances.data(), instances.size());
+
+	accelBuildOptions.operation = OPTIX_BUILD_OPERATION_UPDATE;
+
+	OPTIX_CHECK(optixAccelBuild(optixContext, cudaStream,
+		&accelBuildOptions, &instanceInput, 1,
+		tempBuffer.d_pointer(), accelBufferSizes.tempSizeInBytes,
+		outputBuffer.d_pointer(), accelBufferSizes.outputSizeInBytes,
+		&insTraversableHandle, nullptr, 0));
+}
+
 
 void OptiXRenderer::render(size_t width, size_t height) {
 	if(launchData.frameSize.x != width || launchData.frameSize.y != height){
@@ -432,23 +473,3 @@ void OptiXRenderer::render(size_t width, size_t height) {
 void OptiXRenderer::downloadPixels(uint32_t* h_pixels) {
 	renderBuffer.download<uint32_t>(h_pixels, launchData.frameSize.x * launchData.frameSize.y);
 }
-
-void OptiXRenderer::updateInstancesAS() {
-
-}
-
-
-//void SampleRenderer::setCamera(const Camera& camera)
-//{
-//	lastSetCamera = camera;
-//	launchParams.camera.position = camera.from;
-//	launchParams.camera.direction = normalize(camera.at - camera.from);
-//	const float cosFovy = 0.66f;
-//	const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
-//	launchParams.camera.horizontal
-//		= cosFovy * aspect * normalize(cross(launchParams.camera.direction,
-//			camera.up));
-//	launchParams.camera.vertical
-//		= cosFovy * normalize(cross(launchParams.camera.horizontal,
-//			launchParams.camera.direction));
-//}

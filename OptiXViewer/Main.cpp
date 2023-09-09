@@ -23,14 +23,67 @@ static void glfw_error_callback(int error, const char* description) {
 	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+#define PLANE_ENV
+
 int main(int, char**) {
-	auto objList = fastLoadOBJModels("../../penedepthSitu/bunny_case_03_oversampled.obj"); //sponza.obj"); // bunny_case_03_oversampled.obj");
 	OptiXRenderer optixRenderer;
+
+	//Env
+	{
+#ifdef PLANE_ENV
+		auto box = createPlane();
+		optixRenderer.createGeometryAS(*box);
+#endif
+#ifdef  BOX_ENV
+		optixRenderer.createGeometryAS(*box);
+		optixRenderer.createGeometryAS(*box);
+		optixRenderer.createGeometryAS(*box);
+		optixRenderer.createGeometryAS(*box);
+#endif 
+
+	}
+
+	auto objList = fastLoadOBJModels("../../penedepthSitu/bunny_case_03_oversampled.obj");
 	for (int i = 0; i < objList.size(); i++)
 		optixRenderer.createGeometryAS(*objList[i]);
+
 	optixRenderer.createInstances();
 	optixRenderer.createInstancesAS();
 	optixRenderer.buildSBT();
+
+	// Env Setting
+	{
+#ifdef PLANE_ENV
+		optixRenderer.transformationList[0].setTranslation(0, 0, 0);
+		optixRenderer.transformationList[0].setRotation(0, 0, 0);
+		optixRenderer.transformationList[0].setScale(10, 1, 10);
+#endif
+#ifdef BOX_ENV
+		optixRenderer.transformationList[0].setTranslation(0, 0, 0);
+		optixRenderer.transformationList[0].setRotation(0, 0, 0);
+		optixRenderer.transformationList[0].setScale(4, 1, 6);
+
+		optixRenderer.transformationList[1].setTranslation(0, 3, -6);
+		optixRenderer.transformationList[1].setRotation(90, 0, 0);
+		optixRenderer.transformationList[1].setScale(4, 1, 3);
+
+		optixRenderer.transformationList[2].setTranslation(3, 3, 0);
+		optixRenderer.transformationList[2].setRotation(0, 0, 90);
+		optixRenderer.transformationList[2].setScale(3, 1, 6);
+
+		optixRenderer.transformationList[3].setTranslation(0, 6, 0);
+		optixRenderer.transformationList[3].setRotation(0, 0, 0);
+		optixRenderer.transformationList[3].setScale(4, 1, 6);
+
+
+		optixRenderer.transformationList[4].setTranslation(0, 3, 6);
+		optixRenderer.transformationList[4].setRotation(90, 0, 0);
+		optixRenderer.transformationList[4].setScale(4, 1, 3);
+#endif
+		optixRenderer.updateInstancesAS();
+	}
+
+#pragma region OTHER_INFO
 	//glm::vec3 bmin(1e7f,1e7f,1e7f), bmax(-1e7f,-1e7f,-1e7f);
 	//for (auto obj : objList) {
 	//    for (auto v : obj->vertices) {
@@ -64,7 +117,7 @@ int main(int, char**) {
 	//std::cout << bmin.x << " " << bmin.y << " " << bmin.z << std::endl;
 	//std::cout << bmax.x << " " << bmax.y << " " << bmax.z << std::endl;
 	//std::cout << bsize.x << " " << bsize.y << " " << bsize.z << std::endl;
-
+#pragma endregion
 
 	glfwSetErrorCallback(glfw_error_callback);
 	if (!glfwInit())
@@ -100,25 +153,49 @@ int main(int, char**) {
 		ImGui::NewFrame();
 
 		// imgui renderering
-
+		ImGui::Begin("Hierarchy");
 		{
-			Camera tmp = EditMode::getEditMode().camera;
-			std::ostringstream oss;
-			oss << "center : " << tmp.cen.x << " " << tmp.cen.y << " " << tmp.cen.z << std::endl;
-			oss << "eye : " << tmp.eye.x << " " << tmp.eye.y << " " << tmp.eye.z << std::endl;
-			oss << "up : " << tmp.up.x << " " << tmp.up.y << " " << tmp.up.z << std::endl;
-			ImGui::Text(oss.str().c_str());
+			if (ImGui::TreeNode(std::string("Camera").c_str())) {
+				Camera tmp = EditMode::getEditMode().camera;
+				std::ostringstream oss;
+				oss << "center : " << tmp.cen.x << " " << tmp.cen.y << " " << tmp.cen.z << std::endl;
+				oss << "eye : " << tmp.eye.x << " " << tmp.eye.y << " " << tmp.eye.z << std::endl;
+				oss << "up : " << tmp.up.x << " " << tmp.up.y << " " << tmp.up.z << std::endl;
+				ImGui::Text(oss.str().c_str());
+				ImGui::TreePop();
+			}
+		}
+		{
+			auto& tList = optixRenderer.transformationList;
+
+			bool isChange = false;
+			for (int i = 0; i < tList.size(); i++) {
+				if (ImGui::TreeNode(std::string("Index : " + std::to_string(i)).c_str())) {
+					isChange |= ImGui::DragFloat3("Position", (float*)&tList[i].mTanslation, 0.2f);
+					isChange |= ImGui::DragFloat3("Rotation", (float*)&tList[i].mRotation, 0.2f, 0, 360);
+					isChange |= ImGui::DragFloat3("Scale", (float*)&tList[i].mScale, 0.2f, 0.1);
+
+					ImGui::TreePop();
+				}
+			}
+			if (isChange)
+				optixRenderer.updateInstancesAS();
 		}
 
+
+		bool mouseEvent = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow | ImGuiHoveredFlags_ChildWindows)
+			| ImGui::IsAnyItemFocused() | ImGui::IsAnyItemActive() | ImGui::IsItemHovered();
+		if (!mouseEvent)
+			EditMode::getEditMode().updateCamera();
+
+		ImGui::End();
 		ImGui::Render();
 
 		int display_w, display_h;
 		glfwGetFramebufferSize(window, &display_w, &display_h);
-		EditMode::getEditMode().updateCamera();
 		optixRenderer.render(display_w, display_h);
 		uint32_t* texture = new uint32_t[display_w * display_h];
 		optixRenderer.downloadPixels(texture);
-
 
 		if (textureID == -1)
 			glGenTextures(1, &textureID);
@@ -127,13 +204,11 @@ int main(int, char**) {
 		GLenum texelType = GL_UNSIGNED_BYTE;
 		glTexImage2D(GL_TEXTURE_2D, 0, texFormat, display_w, display_h, 0, GL_RGBA, texelType, texture);
 
-
 		glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDisable(GL_LIGHTING);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		//gluLookAt(c.eye.x, c.eye.y, c.eye.z, c.cen.x, c.cen.y, c.cen.z, c.up.x, c.up.y, c.up.z);
 
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, textureID);

@@ -46,13 +46,22 @@ extern "C" __global__ void __closesthit__radiance() {
 }
   
 extern "C" __global__ void __anyhit__radiance() {
-    // printf("test");
 }
 
 extern "C" __global__ void __miss__radiance(){
     float3& prd = *(float3*)getPRD<float3>();
-    // set to constant white as background color
-    prd = make_float3(1.f);
+    prd = make_float3(0.f);
+}
+
+extern "C" __global__ void __closesthit__shadow() {
+}
+
+extern "C" __global__ void __anyhit__shadow() {
+}
+
+extern "C" __global__ void __miss__shadow() {
+    float3& prd = *(float3*)getPRD<float3>();
+    prd = make_float3(0.f);
 }
 
 extern "C" __global__ void __raygen__renderFrame() {

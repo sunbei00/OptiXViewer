@@ -81,3 +81,64 @@ std::vector<ObjectModel*> fastLoadOBJModels(const std::string& fileName) {
 	return res;
 }
 
+ObjectModel* createBox(float3 leftRightButtom, float3 topBackFront) {
+	ObjectModel* model = new ObjectModel;
+	auto& attributes = model->vertices;
+	auto& indices = model->indices;
+
+	float left = leftRightButtom.x;
+	float right = leftRightButtom.y;
+	float bottom = leftRightButtom.z;
+	float top = topBackFront.x;
+	float back = topBackFront.y;
+	float front = topBackFront.z;
+	attributes.push_back(make_float3(left, bottom, back));
+	attributes.push_back(make_float3(left, bottom, front));
+	attributes.push_back(make_float3(left, top, front));
+	attributes.push_back(make_float3(left, top, back));
+
+	attributes.push_back(make_float3(right, bottom, front));
+	attributes.push_back(make_float3(right, bottom, back));
+	attributes.push_back(make_float3(right, top, back));
+	attributes.push_back(make_float3(right, top, front));
+
+	attributes.push_back(make_float3(right, bottom, back));
+	attributes.push_back(make_float3(left, bottom, back));
+	attributes.push_back(make_float3(left, top, back));
+	attributes.push_back(make_float3(right, top, back));
+
+	attributes.push_back(make_float3(left, bottom, front));
+	attributes.push_back(make_float3(right, bottom, front));
+	attributes.push_back(make_float3(right, top, front));
+	attributes.push_back(make_float3(left, top, front));
+
+	attributes.push_back(make_float3(left, bottom, back));
+	attributes.push_back(make_float3(right, bottom, back));
+	attributes.push_back(make_float3(right, bottom, front));
+	attributes.push_back(make_float3(left, bottom, front));
+
+	attributes.push_back(make_float3(left, top, front));
+	attributes.push_back(make_float3(right, top, front));
+	attributes.push_back(make_float3(right, top, back));
+	attributes.push_back(make_float3(left, top, back));
+
+	for (unsigned int i = 0; i < 6; ++i) {
+		unsigned int idx = i * 4;
+		indices.push_back(make_uint3(idx, idx + 1, idx + 2));
+		indices.push_back(make_uint3(idx + 2, idx + 3, idx));
+	}
+
+	return model;
+}
+
+
+ObjectModel* createBox() {
+	return createBox(make_float3(-1,1,-1), make_float3(1,-1,1));
+}
+
+ObjectModel* createPlane()
+{
+	return createBox(make_float3(-1, 1, -0.01), make_float3(0.01, -1, 1));
+}
+
+

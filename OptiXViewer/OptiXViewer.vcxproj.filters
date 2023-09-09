@@ -2408,6 +2408,12 @@
     <ClInclude Include="helper_math.h">
       <Filter>3rdParty\optix</Filter>
     </ClInclude>
+    <ClInclude Include="Transformation.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="3rdParty\glm\detail\func_common.inl">
