@@ -22,7 +22,7 @@ struct LaunchData {
 	dCamera camera = {};
 	Light light;
 	int frame = 0;
-	int maxTrace = 2;
+	int maxTrace = 5;
 };
 
 

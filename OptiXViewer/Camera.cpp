@@ -34,10 +34,10 @@ void EditMode::updateCamera()
 	static float alpha = 0.96f; // wheel 속도 조정
 	static ImGuiIO& io = ImGui::GetIO();
 
-	if (io.KeyCtrl &&  (io.MouseWheel) >= 0.1f) {
-		camera.eye.x = camera.eye.x * 0.9 + camera.cen.x * 0.1;
-		camera.eye.y = camera.eye.y * 0.9 + camera.cen.y * 0.1;
-		camera.eye.z = camera.eye.z * 0.9 + camera.cen.z * 0.1;
+	if (io.KeyCtrl && fabs(io.MouseWheel) >= 0.1f) {
+		camera.eye.x = camera.eye.x * (1.f - io.MouseWheel * 0.1) + camera.cen.x * 0.1 * io.MouseWheel;
+		camera.eye.y = camera.eye.y * (1.f - io.MouseWheel * 0.1) + camera.cen.y * 0.1 * io.MouseWheel;
+		camera.eye.z = camera.eye.z * (1.f - io.MouseWheel * 0.1) + camera.cen.z * 0.1 * io.MouseWheel;
 		return;
 	}
 	if (glm::abs(io.MouseWheel) >= 0.1f) {

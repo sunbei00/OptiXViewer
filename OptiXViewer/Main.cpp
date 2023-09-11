@@ -198,7 +198,6 @@ int main(int, char**) {
 					isChangeMaterial |= ImGui::DragFloat("specular", &matList[i].specular, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("roughness", &matList[i].roughness, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("specularTint", &matList[i].specularTint, 0.01, 0, 1);
-					isChangeMaterial |= ImGui::DragFloat("anisotropic", &matList[i].anisotropic, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("sheen", &matList[i].sheen, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("sheenTint", &matList[i].sheenTint, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("clearcoat", &matList[i].clearcoat, 0.01, 0, 1);
