@@ -464,7 +464,7 @@ void OptiXRenderer::render(size_t width, size_t height) {
 	const float aspect = (float)width / (float)height;
 	launchData.camera.horizontal = camera.cosFovy * aspect * normalize(cross(launchData.camera.direction, up));
 	launchData.camera.vertical = camera.cosFovy * normalize(cross(launchData.camera.horizontal, launchData.camera.direction));
-	launchData.light.spotDir = normalize(launchData.light.spotDir);
+	launchData.light.dir = normalize(launchData.light.dir);
 	launchData.frame += 1;
 
 	launchDataBuffer.upload(&launchData, 1);

@@ -8,7 +8,7 @@ public:
 
 	int albedoID = 1;
 	float3 color = make_float3(0.6,0.6,0.6);
-	float3 emission = make_float3(0.6,0.6,0.6);
+	// float3 emission = make_float3(0.6,0.6,0.6);
 	float metallic = 0.5;
 	float subsurface = 0.5;
 	float specular = 0.5;
@@ -19,6 +19,5 @@ public:
 	float sheenTint = 0.5;
 	float clearcoat = 0.5;
 	float clearcoatGloss = 0.5;
-	float troughtput = 1.0;
-	// BrdfType brdf;
+	// float troughtput = 1.0;
 };

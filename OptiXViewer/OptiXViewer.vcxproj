@@ -1101,7 +1101,7 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="devicePrograms.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <InterleaveSourceInPTX Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</InterleaveSourceInPTX>
     </CudaCompile>
   </ItemGroup>

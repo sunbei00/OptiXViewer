@@ -1,1 +1,2 @@
-﻿  OptiXViewer.vcxproj -> C:\optix\OptiXViewer\OptiXViewer\OptiXViewer.exe
+﻿  Skipping CUDA source file devicePrograms.cu (excluded from build).
+  OptiXViewer.vcxproj -> C:\optix\OptiXViewer\OptiXViewer\OptiXViewer.exe

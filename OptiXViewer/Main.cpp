@@ -171,15 +171,10 @@ int main(int, char**) {
 			auto& light = optixRenderer.launchData.light;
 			if (ImGui::TreeNode(std::string("Light").c_str())) {
 				ImGui::DragFloat3("Position", &light.pos.x, 0.2f);
-				ImGui::DragFloat3("color", &light.color.x, 0.2f, 0, 1);
-				ImGui::DragFloat3("uv", &light.uv.x, 0.2f, 0, 1000.f);
-				ImGui::DragFloat("Ambient", &light.ambient.x, 0.01f, 0.f, 1.f);
-
-				ImGui::Checkbox("isSpot", &light.isSpot);
-				if (light.isSpot) {
-					ImGui::DragFloat3("spotDir", &light.spotDir.x, 0.2f);
-					ImGui::DragFloat("angle", &light.angle.x, 0.2f, 0, 360.f);
-				}
+				ImGui::DragFloat3("color", &light.color.x, 0.01f, 0, 1);
+				ImGui::DragFloat3("uv", &light.uv.x, 0.01f, 0, 1000.f);
+				ImGui::DragFloat3("dir", &light.dir.x, 0.01f);
+	
 				ImGui::TreePop();
 			}
 		}
@@ -195,10 +190,9 @@ int main(int, char**) {
 
 					isChangeTransform |= ImGui::DragFloat3("Position", (float*)&tList[i].mTanslation, 0.2f);
 					isChangeTransform |= ImGui::DragFloat3("Rotation", (float*)&tList[i].mRotation, 0.2f, 0, 360);
-					isChangeTransform |= ImGui::DragFloat3("Scale", (float*)&tList[i].mScale, 0.2f, 0.1);
+					isChangeTransform |= ImGui::DragFloat3("Scale", (float*)&tList[i].mScale, 0.01f, 0.1);
 
-					isChangeMaterial |= ImGui::DragFloat3("color", &matList[i].color.x, 0.05, 0, 1);
-					isChangeMaterial |= ImGui::DragFloat3("emission", &matList[i].emission.x, 0.05, 0, 1);
+					isChangeMaterial |= ImGui::DragFloat3("color", &matList[i].color.x, 0.01f, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("matallic", &matList[i].metallic, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("subsurface", &matList[i].subsurface, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("specular", &matList[i].specular, 0.01, 0, 1);
@@ -209,7 +203,6 @@ int main(int, char**) {
 					isChangeMaterial |= ImGui::DragFloat("sheenTint", &matList[i].sheenTint, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("clearcoat", &matList[i].clearcoat, 0.01, 0, 1);
 					isChangeMaterial |= ImGui::DragFloat("clearcoatGloss", &matList[i].clearcoatGloss, 0.01, 0, 1);
-					isChangeMaterial |= ImGui::DragFloat("throughput", &matList[i].troughtput, 0.01, 0, 1);
 
 					isChangeMaterial |= ImGui::Checkbox("isPlane", &matList[i].isPlane);
 					if (matList[i].isPlane)
